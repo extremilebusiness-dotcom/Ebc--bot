@@ -1,1 +1,5 @@
+flask
+flask-session
+websocket-client
 requests
+gunicorn
