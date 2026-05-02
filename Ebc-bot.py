@@ -1,48 +1,47 @@
 import os
-import requests
-import time
 import json
+import websocket
+import time
 
 TOKEN = os.getenv('DERIV_API_TOKEN')
 APP_ID = "1089"
 
-def deriv_request(payload):
-    url = f"https://api.deriv.com/websockets/v3?app_id={APP_ID}"
-    try:
-        response = requests.post(url, json=payload, timeout=30)
-        return response.json()
-    except Exception as e:
-        print(f"Request error: {e}")
-        return None
+def on_message(ws, message):
+    data = json.loads(message)
+    if 'authorize' in data:
+        print(f"✅ Authorized: {data['authorize']['email']}")
+        ws.send(json.dumps({"balance": 1}))
+    elif 'balance' in data:
+        print(f"💰 Balance: ${data['balance']['balance']}")
+        ws.close()
+    elif 'error' in data:
+        print(f"❌ Error: {data['error']['message']}")
+        ws.close()
+
+def on_error(ws, error):
+    print(f"❌ WebSocket error: {error}")
+
+def on_close(ws, close_status_code, close_msg):
+    print("🔌 Connection closed")
+
+def on_open(ws):
+    print("🔐 Authorizing...")
+    ws.send(json.dumps({"authorize": TOKEN}))
 
 def main():
     print("🚀 EBC Bot starting...")
-    
     if not TOKEN:
         print("❌ Missing DERIV_API_TOKEN environment variable.")
         return
-    
-    # Authorize
-    print("🔐 Authorizing...")
-    result = deriv_request({"authorize": TOKEN})
-    
-    if not result or 'error' in result:
-        error_msg = result.get('error', {}).get('message', 'Unknown error') if result else "No response"
-        print(f"❌ Authorization failed: {error_msg}")
-        return
-    
-    print(f"✅ Authorized: {result['authorize']['email']}")
-    
-    # Get balance
-    print("💰 Fetching balance...")
-    balance_result = deriv_request({"balance": 1})
-    
-    if balance_result and 'balance' in balance_result:
-        print(f"💰 Balance: ${balance_result['balance']['balance']}")
-    else:
-        print("⚠️ Could not fetch balance")
-    
-    print("🎉 Bot is running successfully!")
+
+    websocket.enableTrace(False)
+    ws_url = f"wss://ws.derivws.com/websockets/v3?app_id={APP_ID}"
+    ws = websocket.WebSocketApp(ws_url,
+                                on_open=on_open,
+                                on_message=on_message,
+                                on_error=on_error,
+                                on_close=on_close)
+    ws.run_forever()
 
 if __name__ == "__main__":
     main()
