@@ -1,7 +1,8 @@
 import os
 import asyncio
 from deriv_api import DerivAPI
-TOKEN =  )
+
+TOKEN = os.getenv('DERIV_API_TOKEN')
 APP_ID = "1089"
 ENV = "demo"   # Change to "real" later
 
