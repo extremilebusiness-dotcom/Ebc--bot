@@ -1,1 +1,1 @@
-python-deriv-api
+requests
