@@ -4,7 +4,7 @@ import websocket
 import time
 
 TOKEN = os.getenv('DERIV_API_TOKEN')
-APP_ID = "338JYE35xuzPctgWELbK3"
+APP_ID = "1089"
 
 def on_message(ws, message):
     data = json.loads(message)
