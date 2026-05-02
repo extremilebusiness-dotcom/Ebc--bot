@@ -1,7 +1,6 @@
 import os
 import json
 import websocket
-import time
 
 TOKEN = os.getenv('DERIV_API_TOKEN')
 APP_ID = "1089"
@@ -19,7 +18,7 @@ def on_message(ws, message):
         ws.close()
 
 def on_error(ws, error):
-    print(f"❌ WebSocket error: {error}")
+    print(f"⚠️ WebSocket error: {error}")
 
 def on_close(ws, close_status_code, close_msg):
     print("🔌 Connection closed")
@@ -34,7 +33,6 @@ def main():
         print("❌ Missing DERIV_API_TOKEN environment variable.")
         return
 
-    websocket.enableTrace(False)
     ws_url = f"wss://ws.derivws.com/websockets/v3?app_id={APP_ID}"
     ws = websocket.WebSocketApp(ws_url,
                                 on_open=on_open,
