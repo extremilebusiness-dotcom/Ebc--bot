@@ -1,28 +1,48 @@
 import os
-import asyncio
-from deriv_api import DerivAPI
+import requests
+import time
+import json
 
 TOKEN = os.getenv('DERIV_API_TOKEN')
 APP_ID = "1089"
 
-async def main():
-    print(f"TOKEN exists: {bool(TOKEN)}")
-    if not TOKEN:
-        print("❌ ERROR: DERIV_API_TOKEN environment variable is not set.")
-        return
-
-    print(f"🚀 Connecting to Deriv (demo mode)...")
-    api = DerivAPI(app_id=APP_ID)
-
+def deriv_request(payload):
+    url = f"https://api.deriv.com/websockets/v3?app_id={APP_ID}"
     try:
-        resp = await api.authorize(TOKEN)
-        print(f"✅ Authorized: {resp.get('authorize', {}).get('email')}")
-        balance = await api.balance()
-        print(f"💰 Balance: ${balance['balance']['balance']}")
+        response = requests.post(url, json=payload, timeout=30)
+        return response.json()
     except Exception as e:
-        print(f"❌ Error: {e}")
-    finally:
-        await api.clear()
+        print(f"Request error: {e}")
+        return None
+
+def main():
+    print("🚀 EBC Bot starting...")
+    
+    if not TOKEN:
+        print("❌ Missing DERIV_API_TOKEN environment variable.")
+        return
+    
+    # Authorize
+    print("🔐 Authorizing...")
+    result = deriv_request({"authorize": TOKEN})
+    
+    if not result or 'error' in result:
+        error_msg = result.get('error', {}).get('message', 'Unknown error') if result else "No response"
+        print(f"❌ Authorization failed: {error_msg}")
+        return
+    
+    print(f"✅ Authorized: {result['authorize']['email']}")
+    
+    # Get balance
+    print("💰 Fetching balance...")
+    balance_result = deriv_request({"balance": 1})
+    
+    if balance_result and 'balance' in balance_result:
+        print(f"💰 Balance: ${balance_result['balance']['balance']}")
+    else:
+        print("⚠️ Could not fetch balance")
+    
+    print("🎉 Bot is running successfully!")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
